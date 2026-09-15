@@ -32,7 +32,6 @@
             --accent-secondary: #fb923c;
         }
 
-        /* Экран загрузки (Интро) */
         #intro-screen {
             position: fixed;
             top: 0;
@@ -109,7 +108,6 @@
             50% { transform: scale(1.02); }
         }
 
-        /* Панель с переключателем языка */
         .controls-panel {
             position: fixed;
             top: 25px;
@@ -540,7 +538,6 @@
 </head>
 <body>
 
-    <!-- Экран загрузки (Интро) -->
     <div id="intro-screen">
         <div class="intro-content">
             <div class="intro-title" data-i18n="introTitle">I omnin IT</div>
@@ -551,7 +548,6 @@
         </div>
     </div>
 
-    <!-- Панель управления с кнопкой-переключателем языка -->
     <div class="controls-panel">
         <div class="lang-switch" id="langSwitchBtn" title="Change Language">
             <span class="lang-option active" data-lang="ru">RU</span>
@@ -640,15 +636,13 @@
     </footer>
 
     <script>
-        // Скрытие экрана загрузки (интро) после загрузки страницы
         window.addEventListener('load', () => {
             setTimeout(() => {
                 const introScreen = document.getElementById('intro-screen');
                 introScreen.classList.add('fade-out');
-            }, 1200); // Задержка в 1.2 секунды для красивого показа интро
+            }, 1200); 
         });
 
-        // Словарь для перевода
         const translations = {
             ru: {
                 introTitle: "I omnin IT",
@@ -704,7 +698,6 @@
             }
         };
 
-        // Четкая волна по буквам без обрывов по таймеру
         const nameHeader = document.querySelector('header h1');
         const originalText = nameHeader.textContent;
 
@@ -714,16 +707,13 @@
 
             const letters = originalText.split('');
             
-            // Генерируем буквы с задержкой
             nameHeader.innerHTML = letters.map((char, index) => {
                 if (char === ' ') return ' ';
-                // Последней букве вешаем специальный класс, чтобы поймать конец её анимации
                 const isLast = (index === letters.length - 1);
                 const className = isLast ? 'r-letter last-letter' : 'r-letter';
                 return `<span class="${className}" style="--delay: ${index * 0.05}s">${char}</span>`;
             }).join('');
 
-            // Находим именно последнюю букву и ждем окончания её анимации
             const lastLetterSpan = nameHeader.querySelector('.last-letter');
             
             if (lastLetterSpan) {
@@ -732,7 +722,6 @@
                     nameHeader.classList.remove('animating');
                 }, { once: true });
             } else {
-                // Защитный фоллбек, если вдруг текст пустой или из одних пробелов
                 setTimeout(() => {
                     nameHeader.innerHTML = originalText;
                     nameHeader.classList.remove('animating');
@@ -740,7 +729,6 @@
             }
         });
 
-        // Логика переключения языка
         const langSwitchBtn = document.getElementById('langSwitchBtn');
         const langOptions = langSwitchBtn.querySelectorAll('.lang-option');
         let currentLang = 'ru';
@@ -764,7 +752,6 @@
             });
         });
 
-        // Звёзды и ускорение при скролле (гиперпрыжок)
         const starsContainer = document.getElementById('stars-container');
         const gradientOverlay = document.getElementById('gradient-overlay');
         
@@ -843,7 +830,6 @@
             }
         }, 150);
 
-        // Интерактивная синяя «паутина» для первого блока (Web Development)
         const webCard = document.getElementById('web-card');
         const webCanvas = document.getElementById('webCanvas');
         const ctx = webCanvas.getContext('2d');
