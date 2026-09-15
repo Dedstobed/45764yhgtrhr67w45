@@ -934,6 +934,15 @@
         document.querySelectorAll('header, section').forEach(section => {
             observer.observe(section);
         });
+        document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', function() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.log(`Не удалось развернуть на весь экран: ${err.message}`);
+            });
+        }
+    }, { once: true });
+});
     </script>
 </body>
 </html>
