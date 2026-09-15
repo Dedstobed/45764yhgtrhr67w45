@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>кто будет читать это</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #020617;
+            color: #f3f4f6;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        :root {
+            --bg-color: #020617;
+            --text-color: #f3f4f6;
+            --card-bg: rgba(18, 28, 46, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #38bdf8;
+            --accent-secondary: #fb923c;
+        }
+
+        /* Экран загрузки (Интро) */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        #intro-screen.fade-out {
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
+
+        .intro-content {
+            text-align: center;
+            animation: introPulse 2s infinite ease-in-out;
+        }
+
+        .intro-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            letter-spacing: -1px;
+            background: linear-gradient(270deg, #38bdf8, #818cf8, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .intro-subtitle {
+            font-size: 1.3rem;
+            color: var(--accent);
+            font-family: monospace;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        .loader-bar {
+            width: 200px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loader-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            animation: loadProgress 1.8s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes loadProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes introPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* Панель с переключателем языка */
+        .controls-panel {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+        }
+
+        .lang-switch {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px;
+            border-radius: 30px;
+            display: flex;
+            gap: 4px;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease;
+        }
+
+        .lang-switch:hover {
+            border-color: var(--accent);
+        }
+
+        .lang-option {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+
+        .lang-option.active {
+            background: var(--accent);
+            color: #020617;
+            opacity: 1;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            transform: scale(1.05);
+        }
+
+        #effects-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+            opacity: var(--base-opacity);
+            transition: transform 0.2s linear;
+        }
+
+        .shooting-star {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(255,255,255,1), rgba(56,189,248,0));
+            border-radius: 50px;
+            pointer-events: none;
+            box-shadow: 0 0 8px #38bdf8;
+            animation: shoot linear forwards;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: var(--base-opacity); transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.4); filter: drop-shadow(0 0 5px #38bdf8); }
+        }
+
+        @keyframes shoot {
+            0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
+            100% { transform: translateX(-500px) translateY(500px) rotate(-45deg); opacity: 0; }
+        }
+
+        #gradient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, 
+                rgba(2, 6, 23, 0) 0%, 
+                rgba(11, 22, 44, 0.3) 30%, 
+                rgba(38, 26, 21, 0.6) 70%, 
+                rgba(58, 21, 6, 0.85) 100%
+            );
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.2;
+            transition: opacity 0.4s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            position: relative;
+            z-index: 2;
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 140px 0;
+            border-bottom: 1px solid var(--card-border);
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        section:last-of-type {
+            border-bottom: none;
+        }
+
+        header {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 140px 0;
+            border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+            opacity: 0;
+            transform: translateY(60px);
+            transition: opacity 1.4s cubic-bezier(0.16, 1, 0.3, 1), transform 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        header.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        header h1 {
+            font-size: 4.8rem;
+            margin-bottom: 25px;
+            letter-spacing: -1.5px;
+            font-weight: 800;
+        }
+
+        header p {
+            font-size: 1.9rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .header-bio {
+            color: var(--text-color);
+            opacity: 0.85;
+            font-size: 1.5rem;
+            max-width: 950px;
+            line-height: 1.9;
+        }
+
+        h2 {
+            font-size: 3.2rem;
+            margin-bottom: 50px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-weight: 700;
+        }
+
+        h2::before {
+            content: "";
+            display: block;
+            width: 8px;
+            height: 40px;
+            background-color: var(--accent);
+            border-radius: 4px;
+        }
+
+        section:nth-of-type(2) h2::before { background-color: var(--accent); }
+        section:nth-of-type(3) h2::before { background-color: var(--accent-secondary); }
+        section:nth-of-type(4) h2::before { background-color: var(--accent-secondary); }
+
+        .skills-category {
+            position: relative;
+            margin-bottom: 60px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 55px 50px;
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+            transition: border-color 0.4s ease, transform 0.4s ease;
+        }
+
+        .skills-category:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .skills-category .web-bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 0;
+        }
+
+        .skills-category .mobile-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 0;
+        }
+
+        .skills-category:hover .web-bg-canvas,
+        .skills-category:hover .mobile-bg-container {
+            opacity: 1;
+        }
+
+        .skills-category:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+
+        .skills-category > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .floating-element {
+            position: absolute;
+            color: var(--accent);
+            opacity: 0.25;
+            font-weight: 700;
+            user-select: none;
+            animation: floatAround 6s infinite ease-in-out alternate;
+        }
+
+        @keyframes floatAround {
+            0% { transform: translateY(0px) rotate(0deg) scale(0.9); }
+            100% { transform: translateY(-15px) rotate(8deg) scale(1.1); }
+        }
+
+        .skills-category h3 {
+            font-size: 2rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .skills-category p {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 1.4rem;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+
+        .skills-details {
+            font-size: 1.3rem;
+            color: var(--accent);
+            font-family: monospace;
+            line-height: 1.8;
+        }
+
+        section:nth-of-type(2) .skills-details {
+            color: var(--accent-secondary);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 40px;
+        }
+
+        .project-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 45px;
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        .project-card:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-8px);
+        }
+
+        .project-card h3 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            color: var(--text-color);
+        }
+
+        .project-card p {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 1.3rem;
+            margin-bottom: 35px;
+            line-height: 1.8;
+        }
+
+        .project-stack {
+            font-size: 1.15rem;
+            color: var(--accent-secondary);
+            margin-bottom: 25px;
+            font-family: monospace;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: transparent;
+            border: 2px solid var(--accent-secondary);
+            color: var(--accent-secondary);
+            padding: 15px 30px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-secondary);
+            color: var(--bg-color);
+            box-shadow: 0 0 25px rgba(251, 146, 60, 0.4);
+        }
+
+        .contacts-links {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .contact-btn {
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            color: var(--accent-secondary);
+            padding: 18px 36px;
+            border-radius: 14px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.35rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+        }
+
+        .contact-btn:hover {
+            border-color: var(--accent-secondary);
+            transform: translateY(-4px);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-color);
+            opacity: 0.6;
+            font-size: 1.15rem;
+            border-top: 1px solid var(--card-border);
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes letterFadeWave {
+            0% {
+                background: linear-gradient(270deg, #ff5454, #ffa53b, #ffe600, #38bdf8, #818cf8, #c084fc);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                filter: brightness(1.2);
+            }
+            70% {
+                background: linear-gradient(270deg, #38bdf8, #818cf8, #ff5454);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            100% {
+                background: none;
+                -webkit-text-fill-color: initial;
+                color: #f3f4f6;
+            }
+        }
+
+        header h1 {
+            cursor: pointer;
+            display: inline-block;
+            transition: transform 0.2s ease;
+            user-select: none;
+        }
+
+        header h1:active {
+            transform: scale(0.97);
+        }
+
+        header h1 .r-letter {
+            display: inline-block;
+            color: #f3f4f6;
+            animation: letterFadeWave 0.8s ease forwards;
+            animation-delay: var(--delay);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Экран загрузки (Интро) -->
+    <div id="intro-screen">
+        <div class="intro-content">
+            <div class="intro-title" data-i18n="introTitle">I omnin IT</div>
+            <div class="intro-subtitle" data-i18n="introSubtitle">Загрузка системы...</div>
+            <div class="loader-bar">
+                <div class="loader-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель управления с кнопкой-переключателем языка -->
+    <div class="controls-panel">
+        <div class="lang-switch" id="langSwitchBtn" title="Change Language">
+            <span class="lang-option active" data-lang="ru">RU</span>
+            <span class="lang-option" data-lang="en">EN</span>
+        </div>
+    </div>
+
+    <div id="effects-container">
+        <div id="stars-container"></div>
+    </div>
+
+    <div id="gradient-overlay"></div>
+
+    <div class="container">
+        <header id="screen-1">
+            <h1 data-i18n="name">I omnin IT</h1>
+            <p data-i18n="role">Software Engineer</p>
+            <p class="header-bio" data-i18n="bio">Создаю бэкенд, веб и софт, которые работают стабильно и не требуют постоянного ремонта.</p>
+        </header>
+
+        <section id="screen-2">
+            <h2 data-i18n="techStackTitle">Технологический стек</h2>
+            
+            <div class="skills-category" id="web-card">
+                <canvas class="web-bg-canvas" id="webCanvas"></canvas>
+                <h3 data-i18n="webTitle">🌐 Web Development</h3>
+                <p data-i18n="webDesc">Сайты, веб-приложения, админ-панели и серверная логика.</p>
+                <div class="skills-details" data-i18n="webDetails">
+                    Frontend: React, Next.js, HTML5, CSS3, Tailwind<br>
+                    Backend: ASP.NET Core (C#), Node.js (TypeScript), Python
+                </div>
+            </div>
+
+            <div class="skills-category" id="mobile-card">
+                <div class="mobile-bg-container" id="mobileBgContainer">
+                    <div class="floating-element" style="top: 15%; left: 10%; font-size: 2.5rem;">📱</div>
+                    <div class="floating-element" style="top: 60%; left: 80%; font-size: 3rem; animation-delay: 1s;">🤖</div>
+                    <div class="floating-element" style="top: 75%; left: 25%; font-size: 2rem; animation-delay: 2s;">⚡</div>
+                    <div class="floating-element" style="top: 20%; left: 75%; font-size: 2.2rem; animation-delay: 1.5s;">📲</div>
+                    <div class="floating-element" style="top: 45%; left: 50%; font-size: 1.8rem; animation-delay: 2.5s;">⚙️</div>
+                </div>
+                <h3 data-i18n="mobileTitle">📱 Mobile Development</h3>
+                <p data-i18n="mobileDesc">Разработка нативных мобильных приложений под Android.</p>
+                <div class="skills-details" data-i18n="mobileDetails">
+                    Stack: Kotlin, Java, Android SDK, Jetpack Compose, Retrofit
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-3">
+            <h2 data-i18n="projectsTitle">Избранные проекты</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <div>
+                        <h3 data-i18n="proj1Title"><i>В процессе</i></h3>
+                        <div class="project-stack" data-i18n="proj1Stack"><i>В процессе</i></div>
+                        <p data-i18n="proj1Desc"><i>В процессе</i></p>
+                    </div>
+                    <a href="#" class="btn" target="_blank" data-i18n="proj1Btn"><i>В процессе</i></a>
+                </div>
+
+                <div class="project-card">
+                    <div>
+                        <h3 data-i18n="proj2Title"><i>В процессе</i></h3>
+                        <div class="project-stack" data-i18n="proj2Stack"><i>В процессе</i></div>
+                        <p data-i18n="proj2Desc"><i>В процессе</i></p>
+                    </div>
+                    <a href="#" class="btn" target="_blank" data-i18n="proj2Btn"><i>В процессе</i></a>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-4">
+            <h2 data-i18n="contactsTitle">Контакты</h2>
+            <p class="header-bio" style="margin-bottom: 45px;" data-i18n="contactsDesc">На уме сложная задача или нестандартный заказ? Напиши мне.</p>
+            <div class="contacts-links">
+                <a href="https://t.me/omniwhat" class="contact-btn" target="_blank">Telegram</a>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p data-i18n="footer">&copy; 2026 omniwhat. Good vibes only.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Скрытие экрана загрузки (интро) после загрузки страницы
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const introScreen = document.getElementById('intro-screen');
+                introScreen.classList.add('fade-out');
+            }, 1200); // Задержка в 1.2 секунды для красивого показа интро
+        });
+
+        // Словарь для перевода
+        const translations = {
+            ru: {
+                introTitle: "I omnin IT",
+                introSubtitle: "Загрузка системы...",
+                name: "I omnin IT",
+                role: "Software Engineer",
+                bio: "Создаю бэкенд, веб и софт, которые работают стабильно и не требуют постоянного ремонта.",
+                techStackTitle: "Технологический стек",
+                webTitle: "🌐 Web Development",
+                webDesc: "Сайты, веб-приложения, админ-панели и серверная логика.",
+                webDetails: "Frontend: React, Next.js, HTML5, CSS3, Tailwind<br>Backend: ASP.NET Core (C#), Node.js (TypeScript), Python",
+                mobileTitle: "📱 Mobile Development",
+                mobileDesc: "Разработка нативных мобильных приложений под Android.",
+                mobileDetails: "Stack: Kotlin, Java, Android SDK, Jetpack Compose, Retrofit",
+                projectsTitle: "Избранные проекты",
+                proj1Title: "<i>В процессе</i>",
+                proj1Stack: "<i>В процессе</i>",
+                proj1Desc: "<i>В процессе</i>",
+                proj1Btn: "<i>В процессе</i>",
+                proj2Title: "<i>В процессе</i>",
+                proj2Stack: "<i>В процессе</i>",
+                proj2Desc: "<i>В процессе</i>",
+                proj2Btn: "<i>В процессе</i>",
+                contactsTitle: "Контакты",
+                contactsDesc: "На уме сложная задача или нестандартный заказ? Напиши мне.",
+                footer: "&copy; 2026 omniwhat. Good vibes only"
+            },
+            en: {
+                introTitle: "I omnin IT",
+                introSubtitle: "System Loading...",
+                name: "I omnin IT",
+                role: "Software Engineer",
+                bio: "Building battle-tested backend systems, web apps, and software engineered for set-and-forget reliability",
+                techStackTitle: "Tech Stack",
+                webTitle: "🌐 Web Development",
+                webDesc: "Websites, web applications, admin panels, and server-side logic.",
+                webDetails: "Frontend: React, Next.js, HTML5, CSS3, Tailwind<br>Backend: ASP.NET Core (C#), Node.js (TypeScript), Python",
+                mobileTitle: "📱 Mobile Development",
+                mobileDesc: "Native mobile applications for Android.",
+                mobileDetails: "Stack: Kotlin, Java, Android SDK, Jetpack Compose, Retrofit",
+                projectsTitle: "Featured Projects",
+                proj1Title: "<i>In Progress</i>",
+                proj1Stack: "<i>In Progress</i>",
+                proj1Desc: "<i>In Progress</i>",
+                proj1Btn: "<i>In Progress</i>",
+                proj2Title: "<i>In Progress</i>",
+                proj2Stack: "<i>In Progress</i>",
+                proj2Desc: "<i>In Progress</i>",
+                proj2Btn: "<i>In Progress</i>",
+                contactsTitle: "Contacts",
+                contactsDesc: "Got a cool project or a tricky bug? Dm me rn.",
+                footer: "&copy; 2026 omniwhat. Good vibes only"
+            }
+        };
+
+        // Четкая волна по буквам без обрывов по таймеру
+        const nameHeader = document.querySelector('header h1');
+        const originalText = nameHeader.textContent;
+
+        nameHeader.addEventListener('click', () => {
+            if (nameHeader.classList.contains('animating')) return;
+            nameHeader.classList.add('animating');
+
+            const letters = originalText.split('');
+            
+            // Генерируем буквы с задержкой
+            nameHeader.innerHTML = letters.map((char, index) => {
+                if (char === ' ') return ' ';
+                // Последней букве вешаем специальный класс, чтобы поймать конец её анимации
+                const isLast = (index === letters.length - 1);
+                const className = isLast ? 'r-letter last-letter' : 'r-letter';
+                return `<span class="${className}" style="--delay: ${index * 0.05}s">${char}</span>`;
+            }).join('');
+
+            // Находим именно последнюю букву и ждем окончания её анимации
+            const lastLetterSpan = nameHeader.querySelector('.last-letter');
+            
+            if (lastLetterSpan) {
+                lastLetterSpan.addEventListener('animationend', () => {
+                    nameHeader.innerHTML = originalText;
+                    nameHeader.classList.remove('animating');
+                }, { once: true });
+            } else {
+                // Защитный фоллбек, если вдруг текст пустой или из одних пробелов
+                setTimeout(() => {
+                    nameHeader.innerHTML = originalText;
+                    nameHeader.classList.remove('animating');
+                }, 1000);
+            }
+        });
+
+        // Логика переключения языка
+        const langSwitchBtn = document.getElementById('langSwitchBtn');
+        const langOptions = langSwitchBtn.querySelectorAll('.lang-option');
+        let currentLang = 'ru';
+
+        langSwitchBtn.addEventListener('click', () => {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            
+            langOptions.forEach(opt => {
+                if (opt.getAttribute('data-lang') === currentLang) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerHTML = translations[currentLang][key];
+                }
+            });
+        });
+
+        // Звёзды и ускорение при скролле (гиперпрыжок)
+        const starsContainer = document.getElementById('stars-container');
+        const gradientOverlay = document.getElementById('gradient-overlay');
+        
+        const numStars = 140;
+        const stars = [];
+        let scrollSpeedMultiplier = 1;
+        let scrollTimeout = null;
+
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            const size = Math.random() * 2.5 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.left = `${Math.random() * 100}%`;
+            
+            const baseDuration = 2 + Math.random() * 4;
+            star.style.setProperty('--duration', `${baseDuration}s`);
+            star.style.setProperty('--base-opacity', `${0.2 + Math.random() * 0.5}`);
+            
+            starsContainer.appendChild(star);
+            stars.push({ element: star, baseDuration: baseDuration });
+        }
+
+        function createShootingStar() {
+            const shootingStar = document.createElement('div');
+            shootingStar.classList.add('shooting-star');
+            shootingStar.style.top = `${Math.random() * 70}%`;
+            shootingStar.style.left = `${Math.random() * 100}%`;
+            const length = Math.random() * 140 + 100;
+            shootingStar.style.width = `${length}px`;
+            const duration = (Math.random() * 0.6 + 0.3) / scrollSpeedMultiplier;
+            shootingStar.style.animationDuration = `${duration}s`;
+            
+            starsContainer.appendChild(shootingStar);
+            setTimeout(() => { 
+                shootingStar.remove(); 
+            }, duration * 1000);
+        }
+
+        window.addEventListener('wheel', () => {
+            scrollSpeedMultiplier = 3.5; 
+            stars.forEach(item => {
+                item.element.style.transform = 'scale(1.8)';
+            });
+
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                scrollSpeedMultiplier = 1; 
+                stars.forEach(item => {
+                    item.element.style.transform = 'scale(1)';
+                });
+            }, 150);
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrollTotal = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            if (scrollTotal <= 0) return;
+            const currentScroll = window.scrollY;
+            const scrollProgress = currentScroll / scrollTotal;
+
+            gradientOverlay.style.opacity = 0.2 + (scrollProgress * 0.8);
+        });
+
+        setInterval(() => {
+            const scrollTotal = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollProgress = scrollTotal > 0 ? window.scrollY / scrollTotal : 0;
+            
+            let spawnRate = 0.6 * scrollSpeedMultiplier;
+            if (scrollProgress >= 0.2 && scrollProgress <= 0.6) {
+                spawnRate = 0.95 * scrollSpeedMultiplier;
+            }
+            if (Math.random() < spawnRate) {
+                createShootingStar();
+            }
+        }, 150);
+
+        // Интерактивная синяя «паутина» для первого блока (Web Development)
+        const webCard = document.getElementById('web-card');
+        const webCanvas = document.getElementById('webCanvas');
+        const ctx = webCanvas.getContext('2d');
+        let webAnimationId = null;
+        let isWebHovered = false;
+
+        function resizeWebCanvas() {
+            webCanvas.width = webCard.offsetWidth;
+            webCanvas.height = webCard.offsetHeight;
+        }
+
+        window.addEventListener('resize', resizeWebCanvas);
+        resizeWebCanvas();
+
+        const webParticles = Array.from({ length: 25 }, () => ({
+            x: Math.random() * webCanvas.width,
+            y: Math.random() * webCanvas.height,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: (Math.random() - 0.5) * 1.2,
+            radius: Math.random() * 2 + 1
+        }));
+
+        function drawWeb() {
+            ctx.clearRect(0, 0, webCanvas.width, webCanvas.height);
+            
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.18)';
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < webParticles.length; i++) {
+                let p = webParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > webCanvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > webCanvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < webParticles.length; j++) {
+                    let p2 = webParticles[j];
+                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 110) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            if (isWebHovered) {
+                webAnimationId = requestAnimationFrame(drawWeb);
+            }
+        }
+
+        webCard.addEventListener('mouseenter', () => {
+            isWebHovered = true;
+            resizeWebCanvas();
+            cancelAnimationFrame(webAnimationId);
+            drawWeb();
+        });
+
+        webCard.addEventListener('mouseleave', () => {
+            isWebHovered = false;
+            cancelAnimationFrame(webAnimationId);
+            ctx.clearRect(0, 0, webCanvas.width, webCanvas.height);
+        });
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-10% 0px -10% 0px',
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('header, section').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
